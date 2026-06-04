@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    branches: [dev, main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment config
+        id: config
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "role_arn=arn:aws:iam::558215002534:role/GitHubActionsDeploy-Prod" >> $GITHUB_OUTPUT
+            echo "stack_name=CookbookStack-Prod" >> $GITHUB_OUTPUT
+          else
+            echo "role_arn=arn:aws:iam::558215002534:role/GitHubActionsDeploy-Test" >> $GITHUB_OUTPUT
+            echo "stack_name=CookbookStack-Test" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ steps.config.outputs.role_arn }}
+          aws-region: us-west-2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install and build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Install infra dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: CDK deploy
+        working-directory: infra
+        run: npx cdk deploy ${{ steps.config.outputs.stack_name }} --require-approval never
+
+      - name: Read stack outputs
+        id: outputs
+        run: |
+          BUCKET=$(aws cloudformation describe-stacks \
+            --stack-name ${{ steps.config.outputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
+            --output text)
+          DISTRIBUTION=$(aws cloudformation describe-stacks \
+            --stack-name ${{ steps.config.outputs.stack_name }} \
+            --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
+            --output text)
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+          echo "distribution=$DISTRIBUTION" >> $GITHUB_OUTPUT
+
+      - name: Sync to S3
+        run: aws s3 sync frontend/out s3://${{ steps.outputs.outputs.bucket }} --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.outputs.outputs.distribution }} \
+            --paths "/*"

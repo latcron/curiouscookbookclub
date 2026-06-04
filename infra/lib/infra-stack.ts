@@ -5,8 +5,12 @@ import * as s3vectors from 'aws-cdk-lib/aws-s3vectors';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 
+interface InfraStackProps extends cdk.StackProps {
+    envName: string;
+}
+
 export class InfraStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    constructor(scope: Construct, id: string, props: InfraStackProps) {
         super(scope, id, props);
 
         // RESOURCES
@@ -30,7 +34,9 @@ export class InfraStack extends cdk.Stack {
             ],
         });
 
-        const vectorBucket = new s3vectors.CfnVectorBucket(this, 'VectorBucket', {});
+        const vectorBucket = new s3vectors.CfnVectorBucket(this, 'VectorBucket', {
+            vectorBucketName: `cookbook-${props.envName}-vectors`,
+        });
         vectorBucket.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
         const vectorIndex = new s3vectors.CfnIndex(this, 'VectorIndex', {

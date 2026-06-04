@@ -48,6 +48,18 @@ jobs:
       - name: Install lambda dependencies
         working-directory: lambda
         run: npm ci
+      
+      - name: Test lambda
+        working-directory: lambda
+        run: npm test
+
+      - name: Install scripts dependencies
+        working-directory: scripts
+        run: npm ci
+      
+      - name: Test scripts
+        working-directory: scripts
+        run: npm test
 
       - name: CDK deploy
         working-directory: infra

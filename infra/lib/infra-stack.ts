@@ -34,7 +34,7 @@ export class InfraStack extends cdk.Stack {
             ],
         });
 
-        const vectorBucketName = `cookbook-${props.envName}-vectors`;
+        const vectorBucketName = `cookbook-${props.envName}-vectors-${this.account}`;
         const vectorBucket = new s3vectors.CfnVectorBucket(this, 'VectorBucket', {
             vectorBucketName,
         });

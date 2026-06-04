@@ -18,3 +18,7 @@ infra/**/*.d.ts
 # OS
 .DS_Store
 Thumbs.db
+
+# AI agent instructions
+AGENTS.md
+CLAUDE.md

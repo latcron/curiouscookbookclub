@@ -45,6 +45,10 @@ jobs:
         working-directory: infra
         run: npm ci
 
+      - name: Install lambda dependencies
+        working-directory: lambda
+        run: npm ci
+
       - name: CDK deploy
         working-directory: infra
         run: npx cdk deploy ${{ steps.config.outputs.stack_name }} --require-approval never

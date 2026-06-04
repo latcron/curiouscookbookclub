@@ -47,6 +47,7 @@ export class InfraStack extends cdk.Stack {
             dimension: 1024,
             distanceMetric: 'cosine',
         });
+        vectorIndex.addDependency(vectorBucket);
 
         // OUTPUTS
         new cdk.CfnOutput(this, 'BucketName', {

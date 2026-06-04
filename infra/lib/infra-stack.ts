@@ -34,13 +34,14 @@ export class InfraStack extends cdk.Stack {
             ],
         });
 
+        const vectorBucketName = `cookbook-${props.envName}-vectors`;
         const vectorBucket = new s3vectors.CfnVectorBucket(this, 'VectorBucket', {
-            vectorBucketName: `cookbook-${props.envName}-vectors`,
+            vectorBucketName,
         });
         vectorBucket.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
         const vectorIndex = new s3vectors.CfnIndex(this, 'VectorIndex', {
-            vectorBucketName: vectorBucket.ref,
+            vectorBucketName: vectorBucketName,
             indexName: 'reviews',
             dataType: 'float32',
             dimension: 1024,
@@ -57,7 +58,7 @@ export class InfraStack extends cdk.Stack {
         });
 
         new cdk.CfnOutput(this, 'VectorBucketName', {
-            value: vectorBucket.ref,
+            value: vectorBucketName,
         });
 
         new cdk.CfnOutput(this, 'VectorIndexName', {
